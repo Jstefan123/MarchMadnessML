@@ -17,11 +17,6 @@ team_vectors = {}
 
 for index, row in team_df.iterrows():
 
-    # if the team has been seen in data before this grab the id, else (just
-    # got promoted to D1) then give them the next id #
-    if row['Team'] not in team_ids:
-        team_ids[row['Team']] = len(team_ids)
-
     data = list(row[1:-1])
     team_vectors[team_ids[row['Team']]] = data
 
@@ -71,10 +66,6 @@ for id in team_vectors:
     else:
         team_vectors[id] += zero_fill
 
-
-# write new update team ids
-with open('filtered_data/team_ids.json', 'w') as outfile:
-    json.dump(team_ids, outfile)
 
 
 with open('filtered_data/17-18/team_vectors.json', 'w') as outfile:
