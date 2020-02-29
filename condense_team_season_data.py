@@ -108,4 +108,4 @@ for index, row in team_advanced_df.iterrows():
 cols = ["Team", "W", "L", "Home_W", "Home_L", "Away_W", "Away_L", "Conf_W", "Conf_L", "SOS", "FG", "FG%",
         "3P", "3P%", "FT", "FT%", "ORB", "TRB", "AST", "STL", "BLK", "TOV", "PF", "Pace", "FTAR", "3PAR", "TS%",
         "TRB%", "AST%", "STL%", "BLK%", "eFG%", "TOV%", "ORB%", "FT/FGA"]
-pd.DataFrame(condensed_arr, columns=cols).to_csv('filtered_data/17-18/condensed_team_season.csv', index=False)
+pd.DataFrame(condensed_arr, columns=cols).to_csv('filtered_data/17-18/team_season.csv', index=False)

@@ -99,4 +99,4 @@ for index, row in school_ratings_df.iterrows():
     condensed_arr.append(data)
 
 cols = ["Team", "PPG", "OPP_PPG", "O-SRS", "D-SRS", "ORtg", "DRtg", "Conf_Rank", "Season_Conf_Champs?", "Tourney_Conf_Champs?"]
-pd.DataFrame(condensed_arr, columns=cols).to_csv('filtered_data/17-18/team_misc_data.csv', index=False)
+pd.DataFrame(condensed_arr, columns=cols).to_csv('filtered_data/17-18/team_misc.csv', index=False)

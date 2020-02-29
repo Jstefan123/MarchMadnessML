@@ -5,12 +5,12 @@ orig_df = pd.read_csv('raw_data/17-18/ap_poll_history.csv')
 condensed_arr = []
 
 # record the following data:
-#   preseason position
-#   last week position
 #   peak position
 #   peak position week
 #   weeks in top 25
 #   weeks in top 10
+#   weeks in top 5
+#   weeks at 1
 
 for index, row in orig_df.iterrows():
 
@@ -22,15 +22,13 @@ for index, row in orig_df.iterrows():
 
     # team name
     data.append(row[0])
-    # first week
-    data.append(row[2])
-    #last week
-    data.append(row[len(row) - 1])
 
     # find peak, peak position, weeks in top 10, weeks in top 25
 
     weeks_in_top_25 = 0
     weeks_in_top_10 = 0
+    weeks_in_top_5 = 0
+    weeks_at_1 = 0
     peak_position = 26
     peak_position_week = 0
 
@@ -46,13 +44,22 @@ for index, row in orig_df.iterrows():
             if int(row[i]) < 11:
                 weeks_in_top_10 += 1
 
+                if int(row[i]) < 6:
+                    weeks_in_top_5 += 1
+
+                    if int(row[i]) == 1:
+                        weeks_at_1 += 1
+
 
     data.append(peak_position)
     data.append(peak_position_week)
     data.append(weeks_in_top_25)
     data.append(weeks_in_top_10)
+    data.append(weeks_in_top_5)
+    data.append(weeks_at_1)
+
     condensed_arr.append(data)
 
 
-cols = ['Team', "Preseason_Rank", "Last_Week_Rank", "Peak_Position", "Peak_Position_Week", "Weeks_in_Top25", "Weeks_in_Top10"]
-pd.DataFrame(condensed_arr, columns=cols).to_csv('filtered_data/17-18/condensed_ap_history.csv', index=False)
+cols = ['Team', "Peak_Position", "Peak_Position_Week", "Weeks_in_Top25", "Weeks_in_Top10", "Weeks_in_Top5", "Weeks_at_1"]
+pd.DataFrame(condensed_arr, columns=cols).to_csv('filtered_data/17-18/ap_history.csv', index=False)

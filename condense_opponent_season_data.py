@@ -96,4 +96,4 @@ for index, row in opp_advanced_df.iterrows():
 # FT/FGA (free throws per field goal attempt)
 cols = ["Team", "FG", "FG%", "3P", "3P%", "FT", "FT%", "ORB", "TRB", "AST", "STL", "BLK", "TOV", "PF", "Pace", "OR", "FTAR", "3PAR", "TS%",
         "TRB%", "AST%", "STL%", "BLK%", "eFG%", "TOV%", "ORB%", "FT/FGA"]
-pd.DataFrame(condensed_arr, columns=cols).to_csv('filtered_data/17-18/condensed_opponent_season.csv', index=False)
+pd.DataFrame(condensed_arr, columns=cols).to_csv('filtered_data/17-18/opp_season.csv', index=False)
