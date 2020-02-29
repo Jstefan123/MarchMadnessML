@@ -28,9 +28,16 @@ for index, row in team_df.iterrows():
 for index, row in opp_df.iterrows():
 
     data = list(row[1:-1])
-    team_vectors[team_ids[row['Team']]].append(data)
+    team_vectors[team_ids[row['Team']]] += data
 
 
+for index, row in misc_df.iterrows():
+
+    data = list(row[1:-1])
+    team_vectors[team_ids[row['Team']]] += data
+
+
+ap_data = {}
 for index, row in ap_poll_df.iterrows():
 
     data = list(row[1:-1])
@@ -49,13 +56,20 @@ for index, row in ap_poll_df.iterrows():
         team_vectors[team_ids['Southern California']].append(data)
 
     else:
-        team_vectors[team_ids[row['Team']]].append(data)
+        ap_data[team_ids[row['Team']]] = data
 
 
-for index, row in misc_df.iterrows():
 
-    data = list(row[1:-1])
-    team_vectors[team_ids[row['Team']]].append(data)
+zero_fill = []
+for i in range(ap_poll_df.shape[1] - 1):
+    zero_fill.append(0)
+
+for id in team_vectors:
+
+    if id in ap_data:
+        team_vectors[id] += ap_data[id]
+    else:
+        team_vectors[id] += zero_fill
 
 
 # write new update team ids
