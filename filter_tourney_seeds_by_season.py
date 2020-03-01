@@ -4,28 +4,28 @@ import os
 
 tourney_Seeds = pd.read_csv('raw_data/tourney_seeds.csv')
 
-curr_year = 1984
+curr_year = 1985
 PATH_ROOT = 'filtered_data/'
 new_file = ''
 
-seeds = {"Midwest" : {}, "East": {}, "South": {}, "West": {}}
+seeds = {"East" : {}, "Midwest": {}, "West": {}, "South": {}}
 
 for index, row in tourney_Seeds.iterrows():
 
     if row['Season'] != curr_year:
 
         # dont write anything for the first year
-        if curr_year != 1984:
+        if curr_year != 1985:
 
-            print(curr_year + 1)
+            print(curr_year)
 
             with open(new_file, 'w') as outfile:
                 json.dump(seeds, outfile)
 
-            seeds = {"Midwest" : {}, "East": {}, "South": {}, "West": {}}
+            seeds = {"East" : {}, "Midwest": {}, "West": {}, "South": {}}
 
         curr_year += 1
-        path = PATH_ROOT + str(curr_year)[2:] + '-' + str(curr_year + 1)[2:]
+        path = PATH_ROOT + str(curr_year - 1)[2:] + '-' + str(curr_year)[2:]
 
         if not os.path.exists(path):
             os.mkdir(path)
@@ -37,13 +37,13 @@ for index, row in tourney_Seeds.iterrows():
     region = ''
 
     if row['Seed'][0] == 'W':
-        region = 'Midwest'
-    elif row['Seed'][0] == 'X':
         region = 'East'
-    elif row['Seed'][0] == 'Y':
-        region = 'South'
-    else:
+    elif row['Seed'][0] == 'X':
         region = 'West'
+    elif row['Seed'][0] == 'Y':
+        region = 'Midwest'
+    else:
+        region = 'South'
 
     try:
         seeds[region][int(row['Seed'][1:])] = row['TeamID']
@@ -53,6 +53,6 @@ for index, row in tourney_Seeds.iterrows():
 
 
 # write the last years results
-print(curr_year + 1)
+print(curr_year)
 with open(new_file, 'w') as outfile:
     json.dump(seeds, outfile)
