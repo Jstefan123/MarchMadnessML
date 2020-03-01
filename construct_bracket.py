@@ -3,13 +3,14 @@ import numpy as np
 import json
 
 
-def main():
+# year is 17-18 format
+def print_inital_bracket(year):
 
     # read in the seed list
     seeds = {}
     team_names = {}
 
-    with open('filtered_data/17-18/tourney_seeds.json') as infile:
+    with open('filtered_data/' + year + '/tourney_seeds.json') as infile:
         seeds = json.load(infile)
 
 
@@ -47,6 +48,10 @@ def main():
             print('\n')
 
         print('\n', end='')
+
+
+def main():
+    print_inital_bracket('17-18')
 
 
 
