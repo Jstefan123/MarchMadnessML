@@ -17,54 +17,50 @@ team_vectors = {}
 
 for index, row in team_df.iterrows():
 
-    data = list(row[1:-1])
+    data = list(row[1:])
     team_vectors[team_ids[row['Team']]] = data
+
 
 for index, row in opp_df.iterrows():
 
-    data = list(row[1:-1])
+    data = list(row[1:])
     team_vectors[team_ids[row['Team']]] += data
 
 
 for index, row in misc_df.iterrows():
 
-    data = list(row[1:-1])
+    data = list(row[1:])
     team_vectors[team_ids[row['Team']]] += data
 
 
 ap_data = {}
 for index, row in ap_poll_df.iterrows():
 
-    data = list(row[1:-1])
+    data = list(row[1:])
 
     # handle data inconsistencies
     if 'Saint Mary\'s' in row['Team']:
-        team_vectors[team_ids['Saint Mary\'s (CA)']].append(data)
+        ap_data[team_ids['Saint Mary\'s (CA)']] = data
 
     elif 'TCU' in row['Team']:
-        team_vectors[team_ids['Texas Christian']].append(data)
+        ap_data[team_ids['Texas Christian']] = data
 
     elif 'UNC' in row['Team']:
-        team_vectors[team_ids['North Carolina']].append(data)
+        ap_data[team_ids['North Carolina']] = data
 
     elif 'USC' in row['Team']:
-        team_vectors[team_ids['Southern California']].append(data)
+        ap_data[team_ids['Southern California']] = data
 
     else:
         ap_data[team_ids[row['Team']]] = data
 
-
-
-zero_fill = []
-for i in range(ap_poll_df.shape[1] - 1):
-    zero_fill.append(0)
 
 for id in team_vectors:
 
     if id in ap_data:
         team_vectors[id] += ap_data[id]
     else:
-        team_vectors[id] += zero_fill
+        team_vectors[id] += [0,0,0,0]
 
 
 

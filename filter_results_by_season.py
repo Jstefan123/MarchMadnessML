@@ -84,4 +84,3 @@ for index, row in tourney_results.iterrows():
 print("tourney", curr_year)
 cols = ["WTeamID", "LTeamID", "MOV", "WLoc"]
 pd.DataFrame(results, columns=cols).to_csv(new_file, index=False)
-results = []
