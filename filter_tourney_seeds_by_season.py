@@ -2,7 +2,7 @@ import pandas as pd
 import json
 import os
 
-tourney_Seeds = pd.read_csv('raw_data/tourney_seeds.csv')
+tourney_seeds = pd.read_csv('raw_data/tourney_seeds.csv')
 
 curr_year = 1985
 PATH_ROOT = 'filtered_data/'
@@ -10,7 +10,7 @@ new_file = ''
 
 seeds = {"East" : {}, "Midwest": {}, "West": {}, "South": {}}
 
-for index, row in tourney_Seeds.iterrows():
+for index, row in tourney_seeds.iterrows():
 
     if row['Season'] != curr_year:
 
