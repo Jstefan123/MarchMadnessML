@@ -1,46 +1,56 @@
-import pandas as pd
 import re
+import json
+from collections import OrderedDict
 
 RAW_DATA_PATH_ROOT = 'data/raw_data/'
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
 
-year = '18-19'
-raw_file = RAW_DATA_PATH_ROOT + year + '/kempom.txt'
-filtered_csv = FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.csv'
+def create_kempom_dict(year):
+    year = '17-18'
+    raw_file = RAW_DATA_PATH_ROOT + year + '/kempom.txt'
+    filtered_csv = FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.csv'
 
-# eliminate the ncaa seed ranking in each row
-with open(raw_file, 'r') as kempom_raw:
+    team_ids = {}
+    with open(FILTERED_DATA_PATH_ROOT + 'team_ids.json') as infile:
+        team_ids = json.load(infile)
 
-    lines = kempom_raw.readlines()
+    kempom_dict = {}
 
-    # the only columns we are going to keep are rank and team name
-    with open (filtered_csv, 'w+') as outfile:
+    # eliminate the ncaa seed ranking in each row
+    with open(raw_file, 'r') as kempom_raw:
 
-        # for the first line, just put commas in between heading
-        header = lines[0].split('\t')[:2]
-        outfile.write(','.join(header) + '\n')
+        lines = kempom_raw.readlines()
 
-        # now for each line place commas in between but need to elimiate number after team
-        # name which represent tourney seed for schools in tournament
-        for i in range(1, len(lines)):
+        # the only columns we are going to keep are rank and team name
+        with open (filtered_csv, 'w+') as outfile:
 
-            # need to skip every 42nd and 43rd lines (2 mid page headers)
-            if i != 1 and (i % 42 == 0 or (i + 1) % 42 == 0):
-                continue
+            # for the first line, just put commas in between heading
+            header = lines[0].split('\t')[:2]
+            outfile.write(','.join(header) + '\n')
 
-            curr_line = lines[i].split('\t')[:2]
-            # this number is appended in the team name col (2nd entry)
-            match_obj = re.search('[0-9]', curr_line[1])
+            # now for each line place commas in between but need to elimiate number after team
+            # name which represent tourney seed for schools in tournament
+            for i in range(1, len(lines)):
 
-            if match_obj is not None:
-                # this is the first index of a number (remove up to the spot before
-                # this because we want to remove space in front of this num)
-                index = match_obj.start()
-                curr_line[1] = curr_line[1][:index - 1]
+                # need to skip every 42nd and 43rd lines (2 mid page headers)
+                if i != 1 and (i % 42 == 0 or (i + 1) % 42 == 0):
+                    continue
 
-            # unsplit object and write to file
-            outfile.write(','.join(curr_line) + '\n')
+                curr_line = lines[i].split('\t')[:2]
+                # this number is appended in the team name col (2nd entry)
+                match_obj = re.search('[0-9]', curr_line[1])
+
+                if match_obj is not None:
+                    # this is the first index of a number (remove up to the spot before
+                    # this because we want to remove space in front of this num)
+                    index = match_obj.start()
+                    curr_line[1] = curr_line[1][:index - 1]
 
 
+                # find the teamID associated with the team name and map it
+                # to the kempom ranking for this year
+                kempom_dict[team_ids[curr_line[1]]] = curr_line[0]
 
-    #for i in range(1, len(lines))
+
+    with open(FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.json', 'w+') as outfile:
+        json.dump(kempom_dict, outfile)
