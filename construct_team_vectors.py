@@ -328,6 +328,7 @@ def filter_misc_team_data(year):
     'Southwest Athletic Conference': 'SWAC',
     'West Coast Conference': 'WCC',
     'Mid-Eastern Athletic Conference': 'MEAC',
+    'Independent': 'Ind'
     }
 
 
@@ -458,7 +459,7 @@ def construct_team_vectors(year):
 
 def main():
 
-    year = '15-16'
+    year = '14-15'
     filter_ap_data(year)
     filter_team_season_data(year)
     filter_opp_season_data(year)

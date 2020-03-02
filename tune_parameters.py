@@ -87,7 +87,7 @@ def main():
     for i in range(10, 101, 5):
         max_features.append(float(i / 100))
     max_depth = []
-    for i in range(1, 11):
+    for i in range(1, 7):
         max_depth.append(i)
 
     for max_f in max_features:
