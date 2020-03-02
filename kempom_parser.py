@@ -19,35 +19,26 @@ def create_kempom_dict(year):
 
         lines = kempom_raw.readlines()
 
-        # the only columns we are going to keep are rank and team name
-        with open (filtered_csv, 'w+') as outfile:
+        for i in range(1, len(lines)):
 
-            # for the first line, just put commas in between heading
-            header = lines[0].split('\t')[:2]
-            outfile.write(','.join(header) + '\n')
+            # need to skip every 42nd and 43rd lines (2 mid page headers)
+            if i != 1 and (i % 42 == 0 or (i + 1) % 42 == 0):
+                continue
 
-            # now for each line place commas in between but need to elimiate number after team
-            # name which represent tourney seed for schools in tournament
-            for i in range(1, len(lines)):
+            curr_line = lines[i].split('\t')[:2]
+            # this number is appended in the team name col (2nd entry)
+            match_obj = re.search('[0-9]', curr_line[1])
 
-                # need to skip every 42nd and 43rd lines (2 mid page headers)
-                if i != 1 and (i % 42 == 0 or (i + 1) % 42 == 0):
-                    continue
-
-                curr_line = lines[i].split('\t')[:2]
-                # this number is appended in the team name col (2nd entry)
-                match_obj = re.search('[0-9]', curr_line[1])
-
-                if match_obj is not None:
-                    # this is the first index of a number (remove up to the spot before
-                    # this because we want to remove space in front of this num)
-                    index = match_obj.start()
-                    curr_line[1] = curr_line[1][:index - 1]
+            if match_obj is not None:
+                # this is the first index of a number (remove up to the spot before
+                # this because we want to remove space in front of this num)
+                index = match_obj.start()
+                curr_line[1] = curr_line[1][:index - 1]
 
 
-                # find the teamID associated with the team name and map it
-                # to the kempom ranking for this year
-                kempom_dict[team_ids[curr_line[1]]] = curr_line[0]
+            # find the teamID associated with the team name and map it
+            # to the kempom ranking for this year
+            kempom_dict[team_ids[curr_line[1]]] = curr_line[0]
 
 
     with open(FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.json', 'w+') as outfile:

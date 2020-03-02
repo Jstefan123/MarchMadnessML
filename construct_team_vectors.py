@@ -353,10 +353,11 @@ def filter_misc_team_data(year):
         data.append(row['ORtg'])
         data.append(row['DRtg'])
 
-        # if MAC, dont include east, west tags
+        # if MAC, OVC dont include east, west tags in (...)
         conf = ''
-        if 'MAC' in row['Conf']:
-            conf = 'MAC'
+        if '(' in row['Conf']:
+            index = row['Conf'].find('(')
+            conf = row['Conf'][:index - 1]
         else:
             conf = row['Conf']
 
@@ -414,7 +415,6 @@ def construct_team_vectors(year):
         data = list(row[1:])
         team_vectors[team_ids[row['Team']]] += data
 
-
     ap_data = {}
     for index, row in ap_poll_df.iterrows():
 
@@ -458,7 +458,7 @@ def construct_team_vectors(year):
 
 def main():
 
-    year = '18-19'
+    year = '16-17'
     filter_ap_data(year)
     filter_team_season_data(year)
     filter_opp_season_data(year)
