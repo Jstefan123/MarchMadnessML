@@ -1,12 +1,10 @@
 import re
 import json
-from collections import OrderedDict
 
 RAW_DATA_PATH_ROOT = 'data/raw_data/'
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
 
 def create_kempom_dict(year):
-    year = '17-18'
     raw_file = RAW_DATA_PATH_ROOT + year + '/kempom.txt'
     filtered_csv = FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.csv'
 

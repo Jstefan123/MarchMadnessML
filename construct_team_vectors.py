@@ -1,8 +1,7 @@
 import pandas as pd
 import json
 import os
-from collections import OrderedDict
-from operator import itemgetter
+from kempom_parser import create_kempom_dict
 
 RAW_DATA_PATH_ROOT = 'data/raw_data/'
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
@@ -382,6 +381,11 @@ def construct_team_vectors(year):
     ap_poll_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/ap_history.csv')
     misc_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/team_misc.csv')
 
+    # load kempom rankings
+    kempom_rankings = {}
+    with open(FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.json') as infile:
+        kempom_rankings = json.load(infile)
+
     team_ids = {}
     with open(FILTERED_DATA_PATH_ROOT + 'team_ids.json') as infile:
         team_ids = json.load(infile)
@@ -389,10 +393,14 @@ def construct_team_vectors(year):
 
     team_vectors = {}
 
+    # first element is the kempom ranking
+    for team_id in kempom_rankings:
+        team_vectors[int(team_id)] = [int(kempom_rankings[team_id])]
+
     for index, row in team_df.iterrows():
 
         data = list(row[1:])
-        team_vectors[team_ids[row['Team']]] = data
+        team_vectors[team_ids[row['Team']]] += data
 
 
     for index, row in opp_df.iterrows():
@@ -455,6 +463,8 @@ def main():
     filter_team_season_data(year)
     filter_opp_season_data(year)
     filter_misc_team_data(year)
+    create_kempom_dict(year)
+
     construct_team_vectors(year)
 
 
