@@ -448,10 +448,9 @@ def construct_team_vectors(year):
     os.remove(FILTERED_DATA_PATH_ROOT + year + '/team_misc.csv')
 
 
-
 def main():
 
-    year = '17-18'
+    year = '18-19'
     filter_ap_data(year)
     filter_team_season_data(year)
     filter_opp_season_data(year)
