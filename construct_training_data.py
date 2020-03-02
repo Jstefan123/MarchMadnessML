@@ -11,9 +11,19 @@ TOTAL_X_train = None
 TOTAL_Y_train = None
 
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
-year_range = ['15-16', '16-17', '17-18']
+year_range = ['15-16','16-17','17-18']
+
+# at least one team in the matchup must have a kempom rating below this threshold
+# to be considered in the training data (for an ncaa tournament we wouldnt care about
+# garbage games between kempom 200-300 teams)
+kempom_ceiling = 125
 
 for year in year_range:
+
+    kempom_rankings = {}
+    with open(FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.json') as infile:
+        kempom_rankings = json.load(infile)
+
     reg_season_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/reg_season_results.csv')
     tourney_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/ncaa_tourney_results.csv')
 
@@ -22,17 +32,15 @@ for year in year_range:
     with open(FILTERED_DATA_PATH_ROOT + year + '/team_vectors.json') as infile:
         team_vectors = json.load(infile)
 
+    X_train = None
+    Y_train = None
 
-    num_features = len(list(team_vectors.values())[0])
-    num_matchups = len(reg_season_df) + len(tourney_df)
-
-    X_train = np.zeros((num_matchups, num_features))
-    Y_train = np.zeros(num_matchups)
-
-
-    matchup_num = 0
     for index, row in reg_season_df.iterrows():
 
+        id1 = str(row['WTeamID'])
+        id2 = str(row['LTeamID'])
+        if int(kempom_rankings[id1]) > kempom_ceiling and int(kempom_rankings[id2]) > kempom_ceiling:
+            continue
 
         home_team = []
         away_team = []
@@ -61,10 +69,14 @@ for year in year_range:
             away_team = np.array(team_vectors[str(row['WTeamID'])])
             true_y = -1
 
-        X_train[matchup_num, :] = np.subtract(home_team, away_team)
-        Y_train[matchup_num] = true_y
+        matchup_vec = np.subtract(home_team, away_team)
 
-        matchup_num += 1
+        if X_train is None:
+            X_train = matchup_vec
+            Y_train = np.array([true_y])
+        else:
+            X_train = np.vstack((X_train, matchup_vec))
+            Y_train = np.concatenate([Y_train, [true_y]])
 
     for index, row in tourney_df.iterrows():
 
@@ -95,10 +107,11 @@ for year in year_range:
             away_team = np.array(team_vectors[str(row['WTeamID'])])
             true_y = -1
 
-        X_train[matchup_num, :] = np.subtract(home_team, away_team)
-        Y_train[matchup_num] = true_y
+        # X_train wont be None here so dont need to check
+        matchup_vec = np.subtract(home_team, away_team)
+        X_train = np.vstack((X_train, matchup_vec))
+        Y_train = np.concatenate([Y_train, [true_y]])
 
-        matchup_num += 1
 
     # add to the total training matrices
     if TOTAL_X_train is None:

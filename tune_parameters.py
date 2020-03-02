@@ -5,6 +5,7 @@ import string
 
 from sklearn.svm import SVC, LinearSVC
 from sklearn import metrics
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.feature_selection import VarianceThreshold, SelectPercentile, chi2
 
@@ -24,7 +25,6 @@ def performance(y_true, y_pred, metric="accuracy"):
     if metric == "accuracy":
         # (TP + TN) / all
         acc = (TP + TN) / (TN + FP + FN + TP)
-        print("acc of fold: ", acc)
         return (TP + TN) / (TN + FP + FN + TP)
 
     elif metric == "f1-score":
@@ -80,20 +80,30 @@ def main():
 
     # find a linear param C
     max = -1
-    max_c = -1
+    max_params = []
 
-    C_range = [10**-3, 10**-2, 10**-1, 10**0, 10**1, 10**2, 10**3]
 
-    for c in C_range:
-        clf = SVC(gamma="auto", kernel="linear", C=c, class_weight="balanced")
-        cv_perf = cv_performance(clf, X_train, Y_train, 20, "accuracy")
-        print(c, cv_perf)
+    max_features = []
+    for i in range(10, 101, 5):
+        max_features.append(float(i / 100))
+    max_depth = []
+    for i in range(1, 11):
+        max_depth.append(i)
 
-        if cv_perf > max:
-            max = cv_perf
-            max_c = c
+    for max_f in max_features:
+        for max_d in max_depth:
 
-    print("FOUND MAX C", max_c)
+            print("========= max_f:", max_f, "max_d:", max_d, "=========")
+            clf = GradientBoostingClassifier(max_features=max_f, max_depth=max_d)
+            cv_perf = cv_performance(clf, X_train, Y_train, 20, "accuracy")
+
+            print("mean accuracy:", cv_perf)
+
+            if cv_perf > max:
+                max = cv_perf
+                max_params = [max_f, max_d]
+
+    print("ENDING MAX", max, max_params)
 
 
 

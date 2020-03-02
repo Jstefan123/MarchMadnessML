@@ -4,6 +4,7 @@ import json
 
 from sklearn.svm import SVC, LinearSVC
 from sklearn import metrics
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.feature_selection import VarianceThreshold, SelectPercentile, chi2
 
@@ -12,7 +13,7 @@ FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
 # this can only be used for brackets 2011-present based on the first four format
 def load_model():
 
-    clf = SVC(gamma="auto", kernel="linear", C=0.1, class_weight="balanced")
+    clf = GradientBoostingClassifier(max_features=0.25)
     X_train = np.load('training_data/X_train.npy')
     Y_train = np.load('training_data/Y_train.npy')
     clf.fit(X_train, Y_train)
