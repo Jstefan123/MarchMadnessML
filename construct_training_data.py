@@ -11,7 +11,7 @@ TOTAL_X_train = None
 TOTAL_Y_train = None
 
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
-year_range = ['16-17', '17-18']
+year_range = ['15-16', '16-17', '17-18']
 
 for year in year_range:
     reg_season_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/reg_season_results.csv')
@@ -107,7 +107,6 @@ for year in year_range:
     else:
         TOTAL_X_train = np.vstack((TOTAL_X_train, X_train))
         TOTAL_Y_train = np.concatenate([TOTAL_Y_train, Y_train])
-
 
 
 np.save('training_data/X_train', TOTAL_X_train)

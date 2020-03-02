@@ -35,7 +35,6 @@ def create_kempom_dict(year):
                 index = match_obj.start()
                 curr_line[1] = curr_line[1][:index - 1]
 
-
             # find the teamID associated with the team name and map it
             # to the kempom ranking for this year
             kempom_dict[team_ids[curr_line[1]]] = curr_line[0]

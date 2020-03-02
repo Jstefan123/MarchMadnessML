@@ -458,7 +458,7 @@ def construct_team_vectors(year):
 
 def main():
 
-    year = '16-17'
+    year = '15-16'
     filter_ap_data(year)
     filter_team_season_data(year)
     filter_opp_season_data(year)
