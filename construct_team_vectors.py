@@ -1,7 +1,9 @@
 import pandas as pd
+import numpy as np
 import json
 import os
 from kempom_parser import create_kempom_dict
+from sklearn.preprocessing import normalize
 
 RAW_DATA_PATH_ROOT = 'data/raw_data/'
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
@@ -117,20 +119,20 @@ def filter_team_season_data(year):
         else:
             data.append(row['School'])
 
-        data.append(row['W'])
-        data.append(row['L'])
-
-        # home wins
-        data.append(row['W.2'])
-        data.append(row['L.2'])
-
-        # away wins
-        data.append(row['W.3'])
-        data.append(row['L.3'])
-
-        # conference wins
-        data.append(row['W.1'])
-        data.append(row['L.1'])
+        # data.append(row['W'])
+        # data.append(row['L'])
+        #
+        # # home wins
+        # data.append(row['W.2'])
+        # data.append(row['L.2'])
+        #
+        # # away wins
+        # data.append(row['W.3'])
+        # data.append(row['L.3'])
+        #
+        # # conference wins
+        # data.append(row['W.1'])
+        # data.append(row['L.1'])
 
         data.append(row['SOS'])
 
@@ -166,8 +168,8 @@ def filter_team_season_data(year):
         condensed_arr[index].append(row['ORB%'])
         condensed_arr[index].append(row['FT/FGA'])
 
-
-    cols = ["Team", "W", "L", "Home_W", "Home_L", "Away_W", "Away_L", "Conf_W", "Conf_L", "SOS", "FG", "FG%",
+# "W", "L", "Home_W", "Home_L", "Away_W", "Away_L", "Conf_W", "Conf_L"
+    cols = ["Team", "SOS", "FG", "FG%",
             "3P", "3P%", "FT", "FT%", "ORB", "TRB", "AST", "STL", "BLK", "TOV", "PF", "Pace", "FTAR", "3PAR", "TS%",
             "TRB%", "AST%", "STL%", "BLK%", "eFG%", "TOV%", "ORB%", "FT/FGA"]
     pd.DataFrame(condensed_arr, columns=cols).to_csv(FILTERED_DATA_PATH_ROOT + year + '/team_season.csv', index=False)
@@ -328,7 +330,8 @@ def filter_misc_team_data(year):
     'Southwest Athletic Conference': 'SWAC',
     'West Coast Conference': 'WCC',
     'Mid-Eastern Athletic Conference': 'MEAC',
-    'Independent': 'Ind'
+    'Independent': 'Ind',
+    'Great West Conference': 'GWC'
     }
 
 
@@ -383,6 +386,7 @@ def construct_team_vectors(year):
     ap_poll_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/ap_history.csv')
     misc_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/team_misc.csv')
 
+
     # load kempom rankings
     kempom_rankings = {}
     with open(FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.json') as infile:
@@ -391,7 +395,6 @@ def construct_team_vectors(year):
     team_ids = {}
     with open(FILTERED_DATA_PATH_ROOT + 'team_ids.json') as infile:
         team_ids = json.load(infile)
-
 
     team_vectors = {}
 
@@ -446,6 +449,24 @@ def construct_team_vectors(year):
             team_vectors[id] += [0,0,0,0]
 
 
+    # Now that we have complete feature vectors for each team, we need to construct
+    # a feature matrix so we can normalize
+    id_order = []
+    feature_matrix = None
+    for id in team_vectors:
+        id_order.append(id)
+
+        if feature_matrix is None:
+            feature_matrix = np.array(team_vectors[id])
+        else:
+            feature_matrix = np.vstack((feature_matrix, team_vectors[id]))
+
+
+    # normalize features so everything is scaled equally
+    feature_matrix = normalize(feature_matrix, axis=0)
+
+    for i in range(np.shape(feature_matrix)[0]):
+        team_vectors[id_order[i]] = list(feature_matrix[i])
 
     with open(FILTERED_DATA_PATH_ROOT + year + '/team_vectors.json', 'w') as outfile:
         json.dump(team_vectors, outfile)
@@ -455,19 +476,3 @@ def construct_team_vectors(year):
     os.remove(FILTERED_DATA_PATH_ROOT + year + '/opp_season.csv')
     os.remove(FILTERED_DATA_PATH_ROOT + year + '/ap_history.csv')
     os.remove(FILTERED_DATA_PATH_ROOT + year + '/team_misc.csv')
-
-
-def main():
-
-    year = '14-15'
-    filter_ap_data(year)
-    filter_team_season_data(year)
-    filter_opp_season_data(year)
-    filter_misc_team_data(year)
-    create_kempom_dict(year)
-
-    construct_team_vectors(year)
-
-
-if __name__ == '__main__':
-    main()

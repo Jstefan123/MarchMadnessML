@@ -6,18 +6,35 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn import metrics
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
-from sklearn.feature_selection import VarianceThreshold, SelectPercentile, chi2
+from sklearn.feature_selection import VarianceThreshold, SelectPercentile, f_classif
 
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
 
-# this can only be used for brackets 2011-present based on the first four format
-def load_model():
 
-    clf = GradientBoostingClassifier(max_features=0.25)
-    X_train = np.load('training_data/X_train.npy')
-    Y_train = np.load('training_data/Y_train.npy')
+# ========= lr: 0.1 max_d: 4 max_f: 0.5 num_trees: 250 =========
+# mean accuracy: 0.7376831907929469
+
+def filter_features(X_train, Y_train, ptile, team_vectors):
+
+    # Keep ptile% best performing features (filter approach feature selection)
+    selector = SelectPercentile(f_classif, percentile=ptile).fit(X_train, Y_train)
+    X_train = selector.transform(X_train)
+
+    # remove features from every feature vector in the test space
+    for id in team_vectors:
+        team_vectors[id] = selector.transform(np.array(team_vectors[id]).reshape(1, -1))[0]
+
+    return X_train, team_vectors
+
+# this can only be used for brackets 2011-present based on the first four format
+def load_model(X_train, Y_train, team_vectors):
+
+    X_train, team_vectors = filter_features(X_train, Y_train, 70, team_vectors)
+
+    clf = GradientBoostingClassifier(learning_rate=0.1, max_features=0.50, max_depth=4, n_estimators=250)
     clf.fit(X_train, Y_train)
-    return clf
+
+    return clf, team_vectors
 
 def load_year_data(year):
 
@@ -123,7 +140,7 @@ def first_four(clf, team_names, team_vectors, tourney_seeds):
     return tourney_seeds
 
 
-def evaluate_matchups(clf, matchups, team_vectors, team_names):
+def evaluate_matchups(clf, matchups, team_vectors, team_names, include_header=True):
 
     num_features = len(list(team_vectors.values())[0])
     matchups_per_region = len(list(matchups.values())[0])
@@ -131,7 +148,8 @@ def evaluate_matchups(clf, matchups, team_vectors, team_names):
     results = {}
     for region in matchups:
 
-        print("===========" + region + "===========")
+        if include_header:
+            print("===========" + region + "===========")
 
         X_test = np.zeros((matchups_per_region, num_features))
         for i in range(matchups_per_region):
@@ -139,7 +157,10 @@ def evaluate_matchups(clf, matchups, team_vectors, team_names):
             team2_id = matchups[region][i][1][1]
             X_test[i, :] = create_matchup_vector(team_vectors, team1_id, team2_id)
 
+        scores = clf.decision_function(X_test)
         y_pred = clf.predict(X_test)
+        print(scores)
+        print(y_pred)
 
         results[region] = []
         for i in range(len(y_pred)):
@@ -154,31 +175,45 @@ def evaluate_matchups(clf, matchups, team_vectors, team_names):
     return results
 
 
-def evaluate_round(clf, team_names, team_vectors, matchups):
+def evaluate_round(clf, team_names, team_vectors, matchups, include_header=True):
 
     # construct a matchup dictionary
     # matchups[region][matchup#] = [team_id1][team_id2]
-    results = evaluate_matchups(clf, matchups, team_vectors, team_names)
+    results = evaluate_matchups(clf, matchups, team_vectors, team_names, include_header)
 
     # format results for next matchup
     matchups = {}
 
-    for region in results:
+    if 'National Championship' in results:
+        return
 
-        matchups[region] = []
-        for i in range(0, len(results[region]), 2):
-            matchups[region].append((results[region][i], results[region][i+1]))
+    if 'Final Four' in results:
+        matchups['National Championship'] = []
+        matchups['National Championship'].append((results['Final Four'][0], results['Final Four'][1]))
+
+    # if this was the Elite8, then we need to consolidate into single Final 4 region
+    elif len(results['East']) == 1:
+        matchups['Final Four'] = []
+        matchups['Final Four'].append((results['East'][0], results['West'][0]))
+        matchups['Final Four'].append((results['South'][0], results['Midwest'][0]))
+
+    else:
+        for region in results:
+
+            matchups[region] = []
+            for i in range(0, len(results[region]), 2):
+                matchups[region].append((results[region][i], results[region][i+1]))
 
     return matchups
 
 def main():
 
-    team_names = {}
-    team_vectors = {}
-    tourney_seeds = {}
+    X_train = np.load('training_data/X_train.npy')
+    Y_train = np.load('training_data/Y_train.npy')
 
-    clf = load_model()
     team_names, team_vectors, tourney_seeds = load_year_data('18-19')
+    clf, team_vectors = load_model(X_train, Y_train, team_vectors)
+
     tourney_seeds = first_four(clf, team_names, team_vectors, tourney_seeds)
 
     matchups = {}
@@ -194,7 +229,7 @@ def main():
     print("===================" + "============" + "===================")
     print("===================" + "Second Round" + "===================")
 
-    next_matchups = evaluate_round(clf, team_names, team_vectors, matchups)
+    next_matchups = evaluate_round(clf, team_names, team_vectors, matchups,)
 
     print("===================" + "===========" + "===================")
     print("===================" + "Third Round" + "===================")
@@ -211,18 +246,15 @@ def main():
 
     next_matchups = evaluate_round(clf, team_names, team_vectors, next_matchups)
 
+    print("==================" + "==========" + "==================")
+    print("==================" + "Final Four" + "==================")
 
+    next_matchups = evaluate_round(clf, team_names, team_vectors, next_matchups, False)
 
+    print("=============" + "=====================" + "============")
+    print("=============" + "National Championship" + "============")
 
-
-
-
-
-
-
-
-
-
+    national_champ = evaluate_round(clf, team_names, team_vectors, next_matchups, False)
 
 
 if __name__ == '__main__':
