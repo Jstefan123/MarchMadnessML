@@ -2,10 +2,10 @@ import pandas as pd
 import json
 import os
 
-reg_season_results = pd.read_csv('raw_data/regular_season_results.csv')
+reg_season_results = pd.read_csv('data/raw_data/regular_season_results.csv')
 
 curr_year = 1984
-PATH_ROOT = 'filtered_data/'
+PATH_ROOT = 'data/filtered_data/'
 new_file = ''
 
 results = []
@@ -48,9 +48,9 @@ results = []
 
 # now do tourney results
 curr_year = 1984
-PATH_ROOT = 'filtered_data/'
+PATH_ROOT = 'data/filtered_data/'
 new_file = ''
-tourney_results = pd.read_csv('raw_data/ncaa_tourney_results.csv')
+tourney_results = pd.read_csv('data/raw_data/ncaa_tourney_results.csv')
 
 
 for index, row in tourney_results.iterrows():

@@ -14,6 +14,29 @@ test_year = ['18-19']
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
 
 
+def get_id_to_seed_dict(year):
+
+    with open(FILTERED_DATA_PATH_ROOT + year + '/tourney_seeds.json') as infile:
+        tourney_seeds = json.load(infile)
+
+    dict = {}
+
+    for region in tourney_seeds:
+        for seed in tourney_seeds[region]:
+
+            id = tourney_seeds[region][seed]
+
+            s_int = None
+            # if play in seed
+            if len(seed) > 2:
+                s_int = int(seed[:2])
+            else:
+                s_int = int(seed)
+
+            dict[str(id)] = s_int
+
+    return dict
+
 # given winning/losing id and winning location, return the feature vector
 #and true label for the matchup
 def get_matchup_vector_and_label(W_vec, L_vec, W_Loc):
@@ -64,9 +87,6 @@ def construct_training_data(training_years, kempom_ceiling, only_tourny_data=Fal
 
         os.remove(FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.json')
 
-        reg_season_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/reg_season_results.csv')
-        tourney_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/ncaa_tourney_results.csv')
-
         team_vectors = {}
         with open(FILTERED_DATA_PATH_ROOT + year + '/team_vectors.json') as infile:
             team_vectors = json.load(infile)
@@ -78,6 +98,7 @@ def construct_training_data(training_years, kempom_ceiling, only_tourny_data=Fal
 
         if not only_tourny_data:
 
+            reg_season_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/reg_season_results.csv')
             for index, row in reg_season_df.iterrows():
 
                 W_id = str(row['WTeamID'])
@@ -103,10 +124,33 @@ def construct_training_data(training_years, kempom_ceiling, only_tourny_data=Fal
                     X_train = np.vstack((X_train, matchup_vec))
                     Y_train = np.concatenate([Y_train, [true_y]])
 
+        tourney_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/ncaa_tourney_results.csv')
+
+        # if only considering tourney data we need to load in the tourney seeds but then
+        # flip it so it maps team_id to regional seed
+        tourney_seeds = {}
+        if only_tourny_data:
+            tourney_seeds = get_id_to_seed_dict(year)
+
         for index, row in tourney_df.iterrows():
 
             W_vec = team_vectors[str(row['WTeamID'])]
             L_vec = team_vectors[str(row['LTeamID'])]
+
+            if only_tourny_data:
+                print(tourney_seeds)
+                print(row)
+                L_vec.append(tourney_seeds[str(row['LTeamID'])])
+                W_vec.append(tourney_seeds[str(row['WTeamID'])])
+                print(W_vec)
+                print(L_vec)
+                exit(1)
+
+
+            # if we are only considering tourney data we need to take on the seeds
+            # if only_tourny_data:
+            #     W_vec.append(tourney_seeds[])
+
             matchup_vec, true_y = get_matchup_vector_and_label(W_vec, L_vec, row['WLoc'])
 
             # if first matchup, avoid None error

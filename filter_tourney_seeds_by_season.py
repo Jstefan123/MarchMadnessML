@@ -2,10 +2,10 @@ import pandas as pd
 import json
 import os
 
-tourney_seeds = pd.read_csv('raw_data/tourney_seeds.csv')
+tourney_seeds = pd.read_csv('data/raw_data/tourney_seeds.csv')
 
 curr_year = 1985
-PATH_ROOT = 'filtered_data/'
+PATH_ROOT = 'data/filtered_data/'
 new_file = ''
 
 seeds = {"East" : {}, "Midwest": {}, "West": {}, "South": {}}
