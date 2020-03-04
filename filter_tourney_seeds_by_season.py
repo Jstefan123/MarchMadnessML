@@ -4,7 +4,7 @@ import os
 
 tourney_seeds = pd.read_csv('data/raw_data/tourney_seeds.csv')
 
-curr_year = 1985
+curr_year = 1984
 PATH_ROOT = 'data/filtered_data/'
 new_file = ''
 
@@ -15,7 +15,7 @@ for index, row in tourney_seeds.iterrows():
     if row['Season'] != curr_year:
 
         # dont write anything for the first year
-        if curr_year != 1985:
+        if curr_year != 1984:
 
             print(curr_year)
 

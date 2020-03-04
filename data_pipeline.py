@@ -137,19 +137,11 @@ def construct_training_data(training_years, kempom_ceiling, only_tourny_data=Fal
             W_vec = team_vectors[str(row['WTeamID'])]
             L_vec = team_vectors[str(row['LTeamID'])]
 
-            if only_tourny_data:
-                print(tourney_seeds)
-                print(row)
-                L_vec.append(tourney_seeds[str(row['LTeamID'])])
-                W_vec.append(tourney_seeds[str(row['WTeamID'])])
-                print(W_vec)
-                print(L_vec)
-                exit(1)
-
-
             # if we are only considering tourney data we need to take on the seeds
-            # if only_tourny_data:
-            #     W_vec.append(tourney_seeds[])
+            if only_tourny_data:
+                W_vec = W_vec + [tourney_seeds[str(row['WTeamID'])]]
+                L_vec = L_vec + [tourney_seeds[str(row['LTeamID'])]]
+
 
             matchup_vec, true_y = get_matchup_vector_and_label(W_vec, L_vec, row['WLoc'])
 
