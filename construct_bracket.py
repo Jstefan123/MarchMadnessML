@@ -4,7 +4,7 @@ import json
 
 from sklearn.svm import SVC, LinearSVC
 from sklearn import metrics
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.feature_selection import VarianceThreshold, SelectPercentile, f_classif
 
@@ -29,9 +29,9 @@ def filter_features(X_train, Y_train, ptile, team_vectors):
 # this can only be used for brackets 2011-present based on the first four format
 def load_model(X_train, Y_train, team_vectors):
 
-    X_train, team_vectors = filter_features(X_train, Y_train, 70, team_vectors)
+    X_train, team_vectors = filter_features(X_train, Y_train, 50, team_vectors)
 
-    clf = GradientBoostingClassifier(learning_rate=0.1, max_features=0.50, max_depth=4, n_estimators=250)
+    clf = AdaBoostClassifier(learning_rate=0.0085, n_estimators=500)
     clf.fit(X_train, Y_train)
 
     return clf, team_vectors
@@ -157,10 +157,7 @@ def evaluate_matchups(clf, matchups, team_vectors, team_names, include_header=Tr
             team2_id = matchups[region][i][1][1]
             X_test[i, :] = create_matchup_vector(team_vectors, team1_id, team2_id)
 
-        scores = clf.decision_function(X_test)
         y_pred = clf.predict(X_test)
-        print(scores)
-        print(y_pred)
 
         results[region] = []
         for i in range(len(y_pred)):

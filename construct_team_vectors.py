@@ -119,20 +119,24 @@ def filter_team_season_data(year):
         else:
             data.append(row['School'])
 
-        # data.append(row['W'])
-        # data.append(row['L'])
-        #
-        # # home wins
-        # data.append(row['W.2'])
-        # data.append(row['L.2'])
-        #
-        # # away wins
-        # data.append(row['W.3'])
-        # data.append(row['L.3'])
-        #
-        # # conference wins
-        # data.append(row['W.1'])
-        # data.append(row['L.1'])
+        # home wins
+        data.append(row['W.2'])
+        data.append(row['L.2'])
+
+        # away wins
+        data.append(row['W.3'])
+        data.append(row['L.3'])
+
+        # conference wins
+        if np.isnan(row['W.1']):
+            data.append(0)
+        else:
+            data.append(row['W.1'])
+
+        if np.isnan(row['L.1']):
+            data.append(0)
+        else:
+            data.append(row['L.1'])
 
         data.append(row['SOS'])
 
@@ -168,9 +172,8 @@ def filter_team_season_data(year):
         condensed_arr[index].append(row['ORB%'])
         condensed_arr[index].append(row['FT/FGA'])
 
-# "W", "L", "Home_W", "Home_L", "Away_W", "Away_L", "Conf_W", "Conf_L"
-    cols = ["Team", "SOS", "FG", "FG%",
-            "3P", "3P%", "FT", "FT%", "ORB", "TRB", "AST", "STL", "BLK", "TOV", "PF", "Pace", "FTAR", "3PAR", "TS%",
+    cols = ["Team", "Home_W", "Home_L", "Away_W", "Away_L", "Conf_W", "Conf_L", "SOS", "FG", "FG%", "3P",
+            "3P%", "FT", "FT%", "ORB", "TRB", "AST", "STL", "BLK", "TOV", "PF", "Pace", "FTAR", "3PAR", "TS%",
             "TRB%", "AST%", "STL%", "BLK%", "eFG%", "TOV%", "ORB%", "FT/FGA"]
     pd.DataFrame(condensed_arr, columns=cols).to_csv(FILTERED_DATA_PATH_ROOT + year + '/team_season.csv', index=False)
 
@@ -331,7 +334,8 @@ def filter_misc_team_data(year):
     'West Coast Conference': 'WCC',
     'Mid-Eastern Athletic Conference': 'MEAC',
     'Independent': 'Ind',
-    'Great West Conference': 'GWC'
+    'Great West Conference': 'GWC',
+    "Pacific-10 Conference": 'Pac-10'
     }
 
 
@@ -453,6 +457,7 @@ def construct_team_vectors(year):
     # a feature matrix so we can normalize
     id_order = []
     feature_matrix = None
+
     for id in team_vectors:
         id_order.append(id)
 

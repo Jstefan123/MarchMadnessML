@@ -5,7 +5,7 @@ from random import randint
 # matchup feature vectors for the test year
 
 # years to consider for training
-train_years = ['12-13', '13-14', '14-15', '15-16', '16-17', '17-18']
+train_years = ['10-11','11-12','12-13', '13-14', '14-15', '15-16', '16-17', '17-18']
 
 # year to test on
 test_year = ['18-19']
@@ -14,17 +14,55 @@ test_year = ['18-19']
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
 
 
-def construct_training_data(training_years, kempom_ceiling):
+# given winning/losing id and winning location, return the feature vector
+#and true label for the matchup
+def get_matchup_vector_and_label(W_vec, L_vec, W_Loc):
+
+    home_team = None
+    away_team = None
+    true_y = None
+
+    # do not create any bias from neutral site games by randomizing
+    # who is home and away
+    if W_Loc == 'N':
+
+        if randint(0, 1) == 1:
+            home_team = np.array(L_vec)
+            away_team = np.array(W_vec)
+            true_y = -1
+        else:
+            home_team = np.array(W_vec)
+            away_team = np.array(L_vec)
+            true_y = 1
+
+    elif W_Loc == 'H':
+        home_team = np.array(W_vec)
+        away_team = np.array(L_vec)
+        true_y = 1
+
+    else:
+        home_team = np.array(L_vec)
+        away_team = np.array(W_vec)
+        true_y = -1
+
+
+    return np.subtract(home_team, away_team), true_y
+
+# if only_tourny_data is True only include tournament game results
+def construct_training_data(training_years, kempom_ceiling, only_tourny_data=False):
 
     TOTAL_X_train = None
     TOTAL_Y_train = None
-    
+
     for year in training_years:
 
         # load in kempom rankings, results, and team vectors from this year -----------------
+        # this is the last time we will need this for this year so we can delete it after
         kempom_rankings = {}
         with open(FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.json') as infile:
             kempom_rankings = json.load(infile)
+
+        os.remove(FILTERED_DATA_PATH_ROOT + year + '/kempom_rankings.json')
 
         reg_season_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/reg_season_results.csv')
         tourney_df = pd.read_csv(FILTERED_DATA_PATH_ROOT + year + '/ncaa_tourney_results.csv')
@@ -38,49 +76,38 @@ def construct_training_data(training_years, kempom_ceiling):
         X_train = None
         Y_train = None
 
-        for index, row in reg_season_df.iterrows():
+        if not only_tourny_data:
 
-            winning_id = str(row['WTeamID'])
-            losing_id = str(row['LTeamID'])
+            for index, row in reg_season_df.iterrows():
 
-            # if not kempom viable by our given threshold then do not consider in
-            # our training data -------------------------------------------------
-            kempom1 = int(kempom_rankings[winning_id])
-            kempom2 = int(kempom_rankings[losing_id])
+                W_id = str(row['WTeamID'])
+                L_id = str(row['LTeamID'])
 
-            if kempom1 > kempom_ceiling and kempom2 > kempom_ceiling:
-                continue
+                # if not kempom viable by our given threshold then do not consider in
+                # our training data -------------------------------------------------
+                kempom1 = int(kempom_rankings[W_id])
+                kempom2 = int(kempom_rankings[L_id])
 
-            # -------------------------------------------------------------------
+                if kempom1 > kempom_ceiling and kempom2 > kempom_ceiling:
+                    continue
 
-            home_team = None
-            away_team = None
-            true_y = None
+                W_vec = team_vectors[W_id]
+                L_vec = team_vectors[L_id]
+                matchup_vec, true_y = get_matchup_vector_and_label(W_vec, L_vec, row['WLoc'])
 
-            # do not create any bias from neutral site games by randomizing
-            # who is home and away
-            if row['WLoc'] == 'N':
-
-                if randint(0, 1) == 1:
-                    home_team = np.array(team_vectors[losing_id])
-                    away_team = np.array(team_vectors[winning_id])
-                    true_y = -1
+                # if first matchup, avoid None error
+                if X_train is None:
+                    X_train = matchup_vec
+                    Y_train = np.array([true_y])
                 else:
-                    home_team = np.array(team_vectors[winning_id])
-                    away_team = np.array(team_vectors[losing_id])
-                    true_y = 1
+                    X_train = np.vstack((X_train, matchup_vec))
+                    Y_train = np.concatenate([Y_train, [true_y]])
 
-            elif row['WLoc'] == 'H':
-                home_team = np.array(team_vectors[winning_id])
-                away_team = np.array(team_vectors[losing_id])
-                true_y = 1
+        for index, row in tourney_df.iterrows():
 
-            else:
-                home_team = np.array(team_vectors[losing_id])
-                away_team = np.array(team_vectors[winning_id])
-                true_y = -1
-
-            matchup_vec = np.subtract(home_team, away_team)
+            W_vec = team_vectors[str(row['WTeamID'])]
+            L_vec = team_vectors[str(row['LTeamID'])]
+            matchup_vec, true_y = get_matchup_vector_and_label(W_vec, L_vec, row['WLoc'])
 
             # if first matchup, avoid None error
             if X_train is None:
@@ -89,44 +116,6 @@ def construct_training_data(training_years, kempom_ceiling):
             else:
                 X_train = np.vstack((X_train, matchup_vec))
                 Y_train = np.concatenate([Y_train, [true_y]])
-
-        for index, row in tourney_df.iterrows():
-
-            winning_id = str(row['WTeamID'])
-            losing_id = str(row['LTeamID'])
-
-            home_team = None
-            away_team = None
-            true_y = None
-
-            # neutral site game, generate a random number where 0 = winning team is home
-            # and 0 = away team was home
-            if row['WLoc'] == 'N':
-
-                if randint(0, 1) == 1:
-                    home_team = np.array(team_vectors[losing_id])
-                    away_team = np.array(team_vectors[winning_id])
-                    true_y = -1
-                else:
-                    home_team = np.array(team_vectors[winning_id])
-                    away_team = np.array(team_vectors[losing_id])
-                    true_y = 1
-
-            elif row['WLoc'] == 'H':
-                home_team = np.array(team_vectors[winning_id])
-                away_team = np.array(team_vectors[losing_id])
-                true_y = 1
-
-            else:
-                home_team = np.array(team_vectors[losing_id])
-                away_team = np.array(team_vectors[winning_id])
-                true_y = -1
-
-            # X_train wont be None here so dont need to check
-            matchup_vec = np.subtract(home_team, away_team)
-
-            X_train = np.vstack((X_train, matchup_vec))
-            Y_train = np.concatenate([Y_train, [true_y]])
 
 
         # add to the total training matrices
@@ -139,6 +128,7 @@ def construct_training_data(training_years, kempom_ceiling):
 
     np.save('training_data/X_train', TOTAL_X_train)
     np.save('training_data/Y_train', TOTAL_Y_train)
+
 
 def main():
 
@@ -153,7 +143,8 @@ def main():
 
     # consalidate training data into single matrices X_train and Y_train
     # located in training_data/
-    construct_training_data(train_years, 100)
+    all_years = train_years + test_year
+    construct_training_data(train_years + test_year, 75, True)
 
 
 
