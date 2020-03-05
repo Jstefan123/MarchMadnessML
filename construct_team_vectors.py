@@ -459,8 +459,6 @@ def construct_team_vectors(year):
     feature_matrix = None
 
     for id in team_vectors:
-        id_order.append(id)
-
         if feature_matrix is None:
             feature_matrix = np.array(team_vectors[id])
         else:
