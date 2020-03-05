@@ -77,39 +77,46 @@ def cv_performance(clf, X, y, k=5, ptile=75, metric="accuracy"):
     return np.array(scores).mean()
 
 
-def tune_params_GradientBoost(X_train, Y_train, learn_rate, max_depth, max_features, num_estimators):
+def tune_params_GradientBoost(X_train, Y_train, learn_rate, max_depth, max_features, num_estimators, ptile_range):
 
     max = -1
     max_learn_rate_found = -1
     max_depth_found = -1
     max_features_found = -1
     max_trees_found = -1
+    max_ptile_found = -1
 
     for rate in learn_rate:
         for max_d in max_depth:
             for max_f in max_features:
                 for num_trees in num_estimators:
+                    for ptile in ptile_range:
 
-                    print("========= lr:", rate, 'max_d:', max_d, end=' ')
-                    print("max_f:", max_f, "num_trees:", num_trees, "=========")
+                        print("========= lr:", rate, 'max_d:', max_d, end=' ')
+                        print("max_f:", max_f, "num_trees:", num_trees, 'ptile:', ptile, "=========")
 
-                    clf = GradientBoostingClassifier(max_features=max_f,
-                                                     max_depth=max_d,
-                                                     n_estimators=num_trees,
-                                                     learning_rate=rate
-                                                     )
+                        running_max = 0
+                        for i in range(5):
+                            clf = GradientBoostingClassifier(max_features=max_f,
+                                                             max_depth=max_d,
+                                                             n_estimators=num_trees,
+                                                             learning_rate=rate
+                                                             )
 
-                    cv_perf = cv_performance(clf, X_train, Y_train, 20, 0.75)
+                            cv_perf = cv_performance(clf, X_train, Y_train, 10, ptile)
+                            running_max += cv_perf
 
-                    print("mean accuracy:", cv_perf)
+                        cv_perf = float(running_max / 5)
+                        print("mean accuracy:", cv_perf)
 
-                    if cv_perf > max:
-                        print("NEW MAXXXXX================================")
-                        max = cv_perf
-                        max_learn_rate_found = rate
-                        max_depth_found = max_d
-                        max_features_found = max_f
-                        max_trees_found = num_trees
+                        if cv_perf > max:
+                            print("NEW MAXXXXX================================")
+                            max = cv_perf
+                            max_learn_rate_found = rate
+                            max_depth_found = max_d
+                            max_features_found = max_f
+                            max_trees_found = num_trees
+                            max_ptile_found = ptile
 
     print('====================FINISHED========================')
     print('max_acc =', max)
@@ -117,6 +124,9 @@ def tune_params_GradientBoost(X_train, Y_train, learn_rate, max_depth, max_featu
     print('max_depth=', max_depth_found)
     print('max_features=', max_features_found)
     print('num_estimators=', max_trees_found)
+    print('ptile=', max_ptile_found)
+    return running_max
+
 
 
 def tune_params_AdaBoost(X_train, Y_train, learn_rate, num_estimators):
@@ -124,14 +134,13 @@ def tune_params_AdaBoost(X_train, Y_train, learn_rate, num_estimators):
     max = -1
     max_learn_rate_found = -1
     max_trees_found = -1
-
     for rate in learn_rate:
         for num_trees in num_estimators:
 
             print("================= lr:", rate, 'num_trees:', num_trees, "=================")
 
             clf = AdaBoostClassifier(n_estimators=num_trees, learning_rate=rate)
-            cv_perf = cv_performance(clf, X_train, Y_train, 10, 0.75)
+            cv_perf = cv_performance(clf, X_train, Y_train, 10, 75)
 
             print("mean accuracy:", cv_perf)
 
@@ -153,27 +162,36 @@ def main():
     X_train = np.load('training_data/X_train.npy')
     Y_train = np.load('training_data/Y_train.npy')
 
-    # max_feature_range = []
-    # max_depth_range = []
-    # learning_rate_range = []
-    # num_estimators = []
-    #
-    # max_feature_range = [.50, .60, .70, .80, .90]
-    # max_depth_range = [2, 3, 4]
-    # learning_rate_range = [.05, .075, .1]
-    # num_estimators = [100, 250, 500]
+    max_feature_range = []
+    max_depth_range = []
+    learning_rate_range = []
+    num_estimators = []
+
+    max_feature_range = [0.75, .80, .85]
+    max_depth_range = [1]
+    learning_rate_range = [0.065, 0.070, 0.075, 0.080, 0.085]
+    num_estimators = [800, 900, 1000, 1100, 1200]
+    ptile_range = [70, 72.5, 75, 77.5, 80]
+
+    tune_params_GradientBoost(X_train, Y_train, learning_rate_range, max_depth_range, max_feature_range, num_estimators, ptile_range)
+    # num_trees = [300, 500, 700, 900]
+    # learning_rate = [0.005, 0.00625, 0.0075, 0.00875, 0.01]
+    # tune_params_AdaBoost(X_train, Y_train, learning_rate, num_trees)
+
+# max_acc = 0.850792349726776 (averaged 0.8472096994535518 over 32 runs)
+# learning_rate= 0.075
+# max_depth= 1
+# max_features= 0.8
+# num_estimators= 1000
+# ptile= 90
 
 
-    # tune_params(X_train, Y_train, learning_rate_range, max_depth_range, max_feature_range, num_estimators)
-    num_trees = [300, 500, 700, 900]
-    learning_rate = [0.005, 0.00625, 0.0075, 0.00875, 0.01]
-    tune_params_AdaBoost(X_train, Y_train, learning_rate, num_trees)
-
-# ================= lr: 0.005 num_trees: 300 =================
-# mean accuracy: 0.7512006104328524
-
-# ================= lr: 0.0075 num_trees: 900 =================
-#  accuracy: 0.7521448390677025
+# max_acc (around .849 dont have exact number)
+# max_features=.80
+# max_depth=2
+# n_estimators=250
+# learning_rate=0.05
+# ptile = 75
 
 
 

@@ -7,6 +7,7 @@ from sklearn import metrics
 from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.feature_selection import VarianceThreshold, SelectPercentile, f_classif
+from collections import Counter
 
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
 
@@ -27,14 +28,13 @@ def filter_features(X_train, Y_train, ptile, team_vectors):
     return X_train, team_vectors
 
 # this can only be used for brackets 2011-present based on the first four format
-def load_model(X_train, Y_train, team_vectors):
+def load_model(X_train, Y_train):
 
-    X_train, team_vectors = filter_features(X_train, Y_train, 50, team_vectors)
-
-    clf = AdaBoostClassifier(learning_rate=0.0085, n_estimators=500)
-    clf.fit(X_train, Y_train)
-
-    return clf, team_vectors
+    return GradientBoostingClassifier(max_features=.80,
+                                     max_depth=1,
+                                     n_estimators=1000,
+                                     learning_rate=0.075
+                                     ).fit(X_train, Y_train)
 
 def load_year_data(year):
 
@@ -140,43 +140,74 @@ def first_four(clf, team_names, team_vectors, tourney_seeds):
     return tourney_seeds
 
 
-def evaluate_matchups(clf, matchups, team_vectors, team_names, include_header=True):
+def evaluate_matchups(X_train, Y_train, matchups, team_vectors, team_names, include_header=True):
 
     num_features = len(list(team_vectors.values())[0])
-    matchups_per_region = len(list(matchups.values())[0])
 
-    results = {}
-    for region in matchups:
+    # create the X_test for all matchups
+    num_regions = len(list(matchups.keys()))
+    matchups_per_region = len(list(matchups.values())[0])
+    X_test = np.zeros((num_regions * matchups_per_region, num_features))
+
+    num_matchups = 0
+    for r in matchups:
+        for m in range(matchups_per_region):
+
+            team1_id = matchups[r][m][0][1]
+            team2_id = matchups[r][m][1][1]
+            X_test[num_matchups, :] = create_matchup_vector(team_vectors, team1_id, team2_id)
+
+            num_matchups += 1
+
+    # train 10 classifiers, each making a prediction for each matachup, take majority
+    all_preds = None
+    for i in range(5):
+
+        clf = load_model(X_train, Y_train)
+        curr_pred = clf.predict(X_test)
+
+        if all_preds is None:
+            all_preds = curr_pred
+        else:
+            all_preds = np.vstack((all_preds, curr_pred))
+
+    # consolidate into a single dimensional array by taking the majority prediction
+    y_pred = np.zeros(num_matchups)
+    for i in range(num_matchups):
+
+        col = all_preds[:, i]
+        most_common = Counter(col).most_common(1)
+        y_pred[i] = most_common[0][0]
+        print(most_common)
+
+
+    num_matchups = 0
+
+    for r in matchups:
 
         if include_header:
-            print("===========" + region + "===========")
+            print("===========" + r + "===========")
 
-        X_test = np.zeros((matchups_per_region, num_features))
-        for i in range(matchups_per_region):
-            team1_id = matchups[region][i][0][1]
-            team2_id = matchups[region][i][1][1]
-            X_test[i, :] = create_matchup_vector(team_vectors, team1_id, team2_id)
+        for m in range(matchups_per_region):
 
-        y_pred = clf.predict(X_test)
-
-        results[region] = []
-        for i in range(len(y_pred)):
-            if y_pred[i] == 1:
-                winner = matchups[region][i][0]
+            if y_pred[num_matchups] == 1:
+                winner = matchups[r][m][0]
             else:
-                winner = matchups[region][i][1]
+                winner = matchups[r][m][1]
 
-            print_matchup(matchups[region][i][0], matchups[region][i][1], winner, team_names)
-            results[region].append(winner)
+            print_matchup(matchups[r][m][0], matchups[r][m][1], winner, team_names)
+            matchups[r][m] = winner
 
-    return results
+            num_matchups += 1
+
+    return matchups
 
 
-def evaluate_round(clf, team_names, team_vectors, matchups, include_header=True):
+def evaluate_round(X_train, Y_train, team_names, team_vectors, matchups, include_header=True):
 
     # construct a matchup dictionary
     # matchups[region][matchup#] = [team_id1][team_id2]
-    results = evaluate_matchups(clf, matchups, team_vectors, team_names, include_header)
+    results = evaluate_matchups(X_train, Y_train, matchups, team_vectors, team_names, include_header)
 
     # format results for next matchup
     matchups = {}
@@ -195,6 +226,7 @@ def evaluate_round(clf, team_names, team_vectors, matchups, include_header=True)
         matchups['Final Four'].append((results['South'][0], results['Midwest'][0]))
 
     else:
+
         for region in results:
 
             matchups[region] = []
@@ -203,15 +235,41 @@ def evaluate_round(clf, team_names, team_vectors, matchups, include_header=True)
 
     return matchups
 
+def get_tourney_team_vecs(team_vectors, tourney_seeds):
+
+    dict = {}
+
+    for region in tourney_seeds:
+        for seed in tourney_seeds[region]:
+
+            id = str(tourney_seeds[region][seed])
+
+            s_int = None
+            # if play in seed
+            if len(seed) > 2:
+                s_int = int(seed[:2])
+            else:
+                s_int = int(seed)
+
+            dict[id] = team_vectors[id] + [s_int]
+
+    return dict
+
+
 def main():
 
     X_train = np.load('training_data/X_train.npy')
     Y_train = np.load('training_data/Y_train.npy')
 
     team_names, team_vectors, tourney_seeds = load_year_data('18-19')
-    clf, team_vectors = load_model(X_train, Y_train, team_vectors)
 
-    tourney_seeds = first_four(clf, team_names, team_vectors, tourney_seeds)
+    tourney_team_vecs = get_tourney_team_vecs(team_vectors, tourney_seeds)
+
+    X_train, tourney_team_vecs = filter_features(X_train, Y_train, 90, tourney_team_vecs)
+
+    # this does not really matter so im gonna keep a single prediction for these
+    clf = load_model(X_train, Y_train)
+    tourney_seeds = first_four(clf, team_names, tourney_team_vecs, tourney_seeds)
 
     matchups = {}
     for region in tourney_seeds:
@@ -226,32 +284,33 @@ def main():
     print("===================" + "============" + "===================")
     print("===================" + "Second Round" + "===================")
 
-    next_matchups = evaluate_round(clf, team_names, team_vectors, matchups,)
+    next_matchups = evaluate_round(X_train, Y_train, team_names, tourney_team_vecs, matchups)
 
     print("===================" + "===========" + "===================")
     print("===================" + "Third Round" + "===================")
 
-    next_matchups = evaluate_round(clf, team_names, team_vectors, next_matchups)
+    next_matchups = evaluate_round(X_train, Y_train, team_names, tourney_team_vecs, next_matchups)
 
     print("===================" + "=============" + "===================")
     print("===================" + "Sweet Sixteen" + "===================")
 
-    next_matchups = evaluate_round(clf, team_names, team_vectors, next_matchups)
+    next_matchups = evaluate_round(X_train, Y_train, team_names, tourney_team_vecs, next_matchups)
 
     print("==================" + "===========" + "==================")
     print("==================" + "Elite Eight" + "==================")
 
-    next_matchups = evaluate_round(clf, team_names, team_vectors, next_matchups)
+    next_matchups = evaluate_round(X_train, Y_train, team_names, tourney_team_vecs, next_matchups)
 
     print("==================" + "==========" + "==================")
     print("==================" + "Final Four" + "==================")
 
-    next_matchups = evaluate_round(clf, team_names, team_vectors, next_matchups, False)
+    next_matchups = evaluate_round(X_train, Y_train, team_names, tourney_team_vecs, next_matchups, False)
 
     print("=============" + "=====================" + "============")
     print("=============" + "National Championship" + "============")
 
-    national_champ = evaluate_round(clf, team_names, team_vectors, next_matchups, False)
+    national_champ = evaluate_round(X_train, Y_train, team_names, tourney_team_vecs, next_matchups, False)
+
 
 
 if __name__ == '__main__':

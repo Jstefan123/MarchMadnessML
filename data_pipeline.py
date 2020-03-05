@@ -180,7 +180,7 @@ def main():
     # consalidate training data into single matrices X_train and Y_train
     # located in training_data/
     all_years = train_years + test_year
-    construct_training_data(train_years + test_year, 75, True)
+    construct_training_data(train_years, 75, True)
 
 
 
