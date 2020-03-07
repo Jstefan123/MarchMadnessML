@@ -5,10 +5,10 @@ from random import randint
 # matchup feature vectors for the test year
 
 # years to consider for training
-train_years = ['09-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18']
+train_years = ['10-11','11-12','12-13','13-14','14-15','15-16','16-17','18-19']
 
 # year to test on
-test_year = ['18-19']
+test_year = ['17-18']
 
 # path to the filtered_data years
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'

@@ -6,7 +6,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn import metrics
 from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
-from sklearn.feature_selection import VarianceThreshold, SelectPercentile, f_classif
+from sklearn.feature_selection import VarianceThreshold, SelectPercentile, f_classif, mutual_info_classif
 from collections import Counter
 
 FILTERED_DATA_PATH_ROOT = 'data/filtered_data/'
@@ -261,7 +261,7 @@ def main():
     X_train = np.load('training_data/X_train.npy')
     Y_train = np.load('training_data/Y_train.npy')
 
-    team_names, team_vectors, tourney_seeds = load_year_data('18-19')
+    team_names, team_vectors, tourney_seeds = load_year_data('17-18')
 
     tourney_team_vecs = get_tourney_team_vecs(team_vectors, tourney_seeds)
 

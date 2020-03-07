@@ -167,11 +167,11 @@ def main():
     learning_rate_range = []
     num_estimators = []
 
-    max_feature_range = [0.75, .80, .85]
+    max_feature_range = [0.75, .075]
     max_depth_range = [1]
-    learning_rate_range = [0.065, 0.070, 0.075, 0.080, 0.085]
-    num_estimators = [800, 900, 1000, 1100, 1200]
-    ptile_range = [70, 72.5, 75, 77.5, 80]
+    learning_rate_range = [0.085, 0.085]
+    num_estimators = [800]
+    ptile_range = [97.5, 97.5]
 
     tune_params_GradientBoost(X_train, Y_train, learning_rate_range, max_depth_range, max_feature_range, num_estimators, ptile_range)
     # num_trees = [300, 500, 700, 900]
@@ -179,21 +179,19 @@ def main():
     # tune_params_AdaBoost(X_train, Y_train, learning_rate, num_trees)
 
 # max_acc = 0.850792349726776 (averaged 0.8472096994535518 over 32 runs)
+# did it agin though and now only getting 82 percentish???
 # learning_rate= 0.075
 # max_depth= 1
 # max_features= 0.8
 # num_estimators= 1000
 # ptile= 90
 
-
-# max_acc (around .849 dont have exact number)
-# max_features=.80
-# max_depth=2
-# n_estimators=250
-# learning_rate=0.05
-# ptile = 75
-
-
+# max_acc = 0.8322513661202185 (tighter grid search that averages three predictions)
+# learning_rate= 0.075
+# max_depth= 1
+# max_features= 0.85
+# num_estimators= 800
+# ptile= 97.5
 
 
 
